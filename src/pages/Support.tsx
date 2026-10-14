@@ -4,8 +4,8 @@ import { IconDownload, IconFolder, IconCopy } from "../components/icons";
 import { APP_VERSION } from "../../shared/version";
 
 const LINKS = [
-  { key: "sup.repo", url: "https://github.com/apexdevlabs/apex-launcher" },
-  { key: "sup.issues", url: "https://github.com/apexdevlabs/apex-launcher/issues" },
+  { key: "sup.repo", url: "https://github.com/darkestofrepublic-dotcom/apex-launcher" },
+  { key: "sup.issues", url: "https://github.com/darkestofrepublic-dotcom/apex-launcher/issues" },
   { key: "sup.modrinth", url: "https://modrinth.com" },
   { key: "sup.ftb", url: "https://www.feed-the-beast.com" },
 ] as const;

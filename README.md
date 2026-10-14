@@ -1,7 +1,7 @@
 # Apex Launcher — par ApexDevlabs
 
-[![CI](https://github.com/apexdevlabs/apex-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/apexdevlabs/apex-launcher/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/apexdevlabs/apex-launcher)](https://github.com/apexdevlabs/apex-launcher/releases)
+[![CI](https://github.com/darkestofrepublic-dotcom/apex-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/darkestofrepublic-dotcom/apex-launcher/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/darkestofrepublic-dotcom/apex-launcher)](https://github.com/darkestofrepublic-dotcom/apex-launcher/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Launcher Minecraft Java Edition moderne : gestion des instances, versions officielles,
