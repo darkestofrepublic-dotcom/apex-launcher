@@ -206,3 +206,114 @@ for (const size of [16, 32, 48, 64, 128, 256, 512]) {
 }
 writeFileSync(join(assets, "icon.png"), encodePng(draw(512), 512));
 console.log("icons/*.png OK (Linux)");
+
+// ---------- Images de l'assistant Inno Setup (BMP 24 bits) ----------
+
+function flatten24(px, size, bg) {
+  const rowStride = Math.ceil((size * 3) / 4) * 4;
+  const out = Buffer.alloc(rowStride * size, 0);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const o = (y * size + x) * 4;
+      const a = px[o + 3] / 255;
+      const ro = (size - 1 - y) * rowStride + x * 3;
+      out[ro] = Math.round(px[o + 2] * a + bg[2] * (1 - a));
+      out[ro + 1] = Math.round(px[o + 1] * a + bg[1] * (1 - a));
+      out[ro + 2] = Math.round(px[o] * a + bg[0] * (1 - a));
+    }
+  }
+  return out;
+}
+
+function bmp24(px, w, h, bg) {
+  const rowStride = Math.ceil((w * 3) / 4) * 4;
+  const pixels = Buffer.alloc(rowStride * h, 0);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      const a = px[o + 3] / 255;
+      const ro = (h - 1 - y) * rowStride + x * 3;
+      pixels[ro] = Math.round(px[o + 2] * a + bg[2] * (1 - a));
+      pixels[ro + 1] = Math.round(px[o + 1] * a + bg[1] * (1 - a));
+      pixels[ro + 2] = Math.round(px[o] * a + bg[0] * (1 - a));
+    }
+  }
+  const info = Buffer.alloc(40);
+  info.writeUInt32LE(40, 0);
+  info.writeInt32LE(w, 4);
+  info.writeInt32LE(h, 8);
+  info.writeUInt16LE(1, 12);
+  info.writeUInt16LE(24, 14);
+  const file = Buffer.alloc(14);
+  file.write("BM", 0, "ascii");
+  file.writeUInt32LE(14 + 40 + pixels.length, 2);
+  file.writeUInt32LE(14 + 40, 10);
+  return Buffer.concat([file, info, pixels]);
+}
+
+function wizardBackdrop(w, h) {
+  const px = Buffer.alloc(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      const t = y / (h - 1);
+      px[o] = Math.round(22 - t * (22 - 10));
+      px[o + 1] = Math.round(27 - t * (27 - 13));
+      px[o + 2] = Math.round(42 - t * (42 - 22));
+      px[o + 3] = 255;
+    }
+  }
+  return px;
+}
+
+function blit(dst, dstW, dstH, src, srcSize, dx, dy) {
+  for (let y = 0; y < srcSize; y++) {
+    for (let x = 0; x < srcSize; x++) {
+      const tx = dx + x;
+      const ty = dy + y;
+      if (tx < 0 || ty < 0 || tx >= dstW || ty >= dstH) continue;
+      const so = (y * srcSize + x) * 4;
+      const a = src[so + 3] / 255;
+      if (a === 0) continue;
+      const o = (ty * dstW + tx) * 4;
+      dst[o] = Math.round(src[so] * a + dst[o] * (1 - a));
+      dst[o + 1] = Math.round(src[so + 1] * a + dst[o + 1] * (1 - a));
+      dst[o + 2] = Math.round(src[so + 2] * a + dst[o + 2] * (1 - a));
+      dst[o + 3] = 255;
+    }
+  }
+}
+
+function accentLine(px, w, h, y0, thick) {
+  for (let y = y0; y < Math.min(h, y0 + thick); y++) {
+    for (let x = 0; x < w; x++) {
+      const t = x / (w - 1);
+      const o = (y * w + x) * 4;
+      px[o] = Math.round(79 + t * (103 - 79));
+      px[o + 1] = Math.round(140 + t * (232 - 140));
+      px[o + 2] = Math.round(255 + t * (249 - 255));
+      px[o + 3] = 255;
+    }
+  }
+}
+
+// Grande image verticale du wizard : 164 x 314.
+{
+  const W = 164;
+  const H = 314;
+  const px = wizardBackdrop(W, H);
+  const logo = draw(120);
+  blit(px, W, H, logo, 120, Math.round((W - 120) / 2), 44);
+  accentLine(px, W, H, 208, 3);
+  writeFileSync(join(assets, "wizard.bmp"), bmp24(px, W, H, [11, 13, 22]));
+  console.log("wizard.bmp OK (164x314)");
+}
+
+// Petite image du wizard : 55 x 55.
+{
+  const S = 55;
+  const logo = draw(S);
+  writeFileSync(join(assets, "wizard-small.bmp"), bmp24(logo, S, S, [23, 27, 42]));
+  console.log("wizard-small.bmp OK (55x55)");
+}
+void flatten24;

@@ -34,6 +34,8 @@ VersionInfoCompany=ApexDevlabs
 VersionInfoDescription=Installeur Apex Launcher — client Minecraft moderne
 VersionInfoProductName=Apex Launcher
 SetupIconFile=..\assets\icon.ico
+WizardImageFile=..\assets\wizard.bmp
+WizardSmallImageFile=..\assets\wizard-small.bmp
 UninstallDisplayIcon={app}\Apex Launcher.exe
 WizardStyle=modern
 

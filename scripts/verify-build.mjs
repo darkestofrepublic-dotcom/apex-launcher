@@ -4,7 +4,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const required = ["dist-renderer/index.html", "dist-main/electron/main.js", "dist-main/electron/preload.js", "dist-main/electron/ipc.js", "assets/icon.ico", "package.json"];
+const required = ["dist-renderer/index.html", "dist-main/electron/main.js", "dist-main/electron/preload.js", "dist-main/electron/ipc.js", "assets/icon.ico", "assets/icon.icns", "assets/wizard.bmp", "assets/wizard-small.bmp", "package.json"];
 let failed = false;
 for (const rel of required) {
   const full = join(root, rel);

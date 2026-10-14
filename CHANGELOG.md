@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.0.8 — 2026-10-14
+
+- Branding complet de l'installateur : visuels APEX du wizard (grande image 164×314 + petite 55×55 générées localement), icône du setup et métadonnées appliquées à l'exécutable.
+
+
 ## 1.0.7 — 2026-10-14
 
 - Nouveau logo APEX (sommet + diamant) dans l'application, l'installateur et l'exécutable (ICO, ICNS macOS, PNG Linux régénérés).
