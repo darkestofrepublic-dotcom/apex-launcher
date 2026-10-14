@@ -1,0 +1,8 @@
+node_modules/
+dist-main/
+dist-renderer/
+release/
+tools/
+.env
+*.log
+apex-data-dev/

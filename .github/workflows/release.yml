@@ -1,0 +1,82 @@
+name: Release
+
+# Publie les installateurs pour Windows, macOS et Linux à chaque tag v* (ex. v1.0.7).
+# Les binaires Electron/macOS/Linux sont compilés sur leurs runners natifs :
+# GitHub fournit gratuitement ces machines aux dépôts publics.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - name: Installer Inno Setup
+        run: choco install innosetup --no-progress -y
+      - run: npm run installer
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ApexLauncher-Setup-x64.exe
+          path: release/ApexLauncher-Setup-x64.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx electron-builder --mac dmg zip --x64 --arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx electron-builder --linux AppImage deb --x64 --arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            release/*.AppImage
+            release/*.deb
+
+  publish:
+    needs: [windows, macos, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
