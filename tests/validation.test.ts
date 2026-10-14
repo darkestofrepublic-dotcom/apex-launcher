@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { validateMemory, validateSettings, defaultSettings } from "../electron/services/settings";
 import { checkLoaderCompatibility } from "../electron/services/loaders";
 import { validatePseudo } from "../electron/services/accounts";
+import { validateClientId, mapAadstsError, MS_ERRORS } from "../electron/services/accounts";
 
 describe("validation de la mémoire", () => {
   it("accepte une allocation normale", () => {
@@ -52,5 +53,28 @@ describe("validation des pseudonymes hors ligne", () => {
     expect(validatePseudo("ab")).not.toBeNull();
     expect(validatePseudo("pseudo avec espaces")).not.toBeNull();
     expect(validatePseudo("a".repeat(17))).not.toBeNull();
+  });
+});
+
+describe("validation du client ID Azure", () => {
+  it("accepte un GUID complet", () => {
+    expect(validateClientId("00000000-0000-4000-8000-000000000000")).toBe(true);
+    expect(validateClientId("  12345678-1234-1234-1234-1234567890ab  ")).toBe(true);
+  });
+  it("refuse les formats invalides", () => {
+    expect(validateClientId("")).toBe(false);
+    expect(validateClientId("not-a-guid")).toBe(false);
+    expect(validateClientId("123456781234123412341234567890ab")).toBe(false);
+  });
+});
+
+describe("mappage des erreurs Azure AD", () => {
+  it("mappe les codes AADSTS connus vers des codes stables", () => {
+    expect(mapAadstsError("AADSTS700016: application introuvable")).toBe(MS_ERRORS.APP_NOT_FOUND);
+    expect(mapAadstsError("error AADSTS50011 redirect")).toBe(MS_ERRORS.REDIRECT_MISMATCH);
+  });
+  it("retourne null sans code connu", () => {
+    expect(mapAadstsError("erreur réseau")).toBeNull();
+    expect(mapAadstsError(MS_ERRORS.TIMEOUT)).toBeNull();
   });
 });

@@ -1,5 +1,11 @@
 # Journal des versions
 
+## 1.0.10 — 2026-10-14
+
+- Parcours d'inscription : section « Pas encore de compte ? » avec liens officiels (acheter Minecraft, créer un compte Microsoft). Aucun identifiant collecté : tout passe par les sites officiels.
+- Connexion Microsoft réparée côté expérience : guide Azure intégré en 5 étapes, validation immédiate du format du client ID, annulation propre à la fermeture de la fenêtre, erreurs Azure (app introuvable, redirection, délai, jeu non possédé) traduites en messages d'action FR/EN.
+
+
 ## 1.0.9 — 2026-10-14
 
 - Installateur personnalisé : choix de la langue (FR/EN) au démarrage, types d'installation complète/minimale/personnalisée, composants (fichiers requis, raccourcis), assistant sombre aux couleurs de l'app, messages de bienvenue brandés.

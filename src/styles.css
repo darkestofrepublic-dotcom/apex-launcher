@@ -292,6 +292,7 @@ h2 { letter-spacing: -0.2px; }
 .btn.danger.solid { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0)), var(--red); color: #fff; border: 1px solid rgba(255,255,255,0.14); }
 .btn.small { padding: 6px 11px; font-size: 12.5px; border-radius: 9px; }
 .btn svg { width: 15px; height: 15px; }
+a.btn { text-decoration: none; }
 .play-btn { font-size: 15px; font-weight: 700; padding: 13px 42px; border-radius: 13px; letter-spacing: 0.3px; }
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;

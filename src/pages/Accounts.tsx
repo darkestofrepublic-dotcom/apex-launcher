@@ -1,15 +1,35 @@
 import { useState } from "react";
 import { api } from "../lib/api";
-import { useApp } from "../components/store";
+import { useApp, type TKey } from "../components/store";
 import { Modal, Field } from "../components/ui";
-import { IconPlus, IconRefresh, IconLogout, IconEdit } from "../components/icons";
-import type { Account } from "../../shared/types";
+import { IconPlus, IconRefresh, IconLogout, IconEdit, IconCheck } from "../components/icons";
+import type { Account, LauncherSettings } from "../../shared/types";
+
+const MS_ERROR_KEYS: Record<string, "acc.errNotConfigured" | "acc.errInvalidId" | "acc.errTimeout" | "acc.errCancelled" | "acc.errAppNotFound" | "acc.errRedirect" | "acc.errNoMinecraft"> = {
+  ERR_MS_NOT_CONFIGURED: "acc.errNotConfigured",
+  ERR_MS_INVALID_ID: "acc.errInvalidId",
+  ERR_MS_TIMEOUT: "acc.errTimeout",
+  ERR_MS_CANCELLED: "acc.errCancelled",
+  ERR_MS_APP_NOT_FOUND: "acc.errAppNotFound",
+  ERR_MS_REDIRECT_MISMATCH: "acc.errRedirect",
+  ERR_MS_NO_MINECRAFT: "acc.errNoMinecraft",
+};
+
+function msErrorMessage(t: (key: TKey, params?: Record<string, string | number>) => string, raw?: string): string {
+  if (!raw) return t("acc.loginFailed");
+  const key = MS_ERROR_KEYS[raw];
+  return key ? t(key) : raw;
+}
 
 export default function Accounts() {
-  const { accounts, activeAccount, reloadAll, notify, t } = useApp();
+  const { accounts, activeAccount, reloadAll, notify, t, settings } = useApp();
   const [showOffline, setShowOffline] = useState(false);
   const [msHint, setMsHint] = useState("");
   const [busy, setBusy] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [clientIdError, setClientIdError] = useState("");
+
+  const msError = (raw?: string) => msErrorMessage(t, raw);
 
   const refreshHint = async () => {
     try {
@@ -28,9 +48,26 @@ export default function Accounts() {
       notify(t("acc.msConnected"));
       await reloadAll();
     } catch (e) {
-      notify(e instanceof Error ? e.message : t("acc.loginFailed"), true);
+      notify(msError(e instanceof Error ? e.message : undefined), true);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const saveClientId = async () => {
+    const value = (clientId ?? settings?.microsoftClientId ?? "").trim();
+    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value)) {
+      setClientIdError(t("acc.clientIdInvalid"));
+      return;
+    }
+    setClientIdError("");
+    try {
+      await api<LauncherSettings>("settings:update", { microsoftClientId: value });
+      setClientId(value);
+      notify(t("acc.clientIdSaved"));
+      await reloadAll();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : t("common.saveFailed"), true);
     }
   };
 
@@ -45,6 +82,38 @@ export default function Accounts() {
       </div>
       <p className="muted small">{msHint}</p>
       <p className="muted small">{t("acc.noPassword")}</p>
+
+      <div className="card" style={{ marginBottom: 14 }}>
+        <div className="card-head"><h3>{t("acc.guideTitle")}</h3></div>
+        <p className="muted small">{t("acc.guideIntro")}</p>
+        <ol className="muted small" style={{ margin: "8px 0", paddingLeft: 20, display: "grid", gap: 6 }}>
+          <li>{t("acc.guideS1")} <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>{t("acc.openPortal")}</a></li>
+          <li>{t("acc.guideS2")}</li>
+          <li>{t("acc.guideS3")}</li>
+          <li>{t("acc.guideS4")} <span className="mono">http://localhost:19855/callback</span></li>
+          <li>{t("acc.guideS5")}</li>
+        </ol>
+        <div className="row" style={{ marginTop: 10 }}>
+          <input
+            style={{ maxWidth: 360 }}
+            placeholder={t("acc.clientIdPh")}
+            value={clientId ?? settings?.microsoftClientId ?? ""}
+            onChange={(e) => { setClientId(e.target.value); setClientIdError(""); }}
+          />
+          <button className="btn small" onClick={saveClientId}><IconCheck />{t("common.save")}</button>
+          {settings?.microsoftClientId && <span className="pill green">{t("acc.clientIdSaved")}</span>}
+        </div>
+        {clientIdError && <p className="small" style={{ color: "var(--red)" }}>{clientIdError}</p>}
+      </div>
+
+      <div className="card" style={{ marginBottom: 14 }}>
+        <div className="card-head"><h3>{t("acc.signupTitle")}</h3></div>
+        <p className="muted small">{t("acc.signupText")}</p>
+        <div className="row">
+          <a className="btn" href="https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc" target="_blank" rel="noreferrer">{t("acc.buyMinecraft")}</a>
+          <a className="btn ghost" href="https://signup.live.com/" target="_blank" rel="noreferrer">{t("acc.createMs")}</a>
+        </div>
+      </div>
 
       <div className="grid cards">
         {accounts.map((a) => (
@@ -94,7 +163,7 @@ function AccountCard({ account, active }: { account: Account; active: boolean })
         {active && <span className="pill green">{t("acc.active")}</span>}
         {account.type === "offline" && <button className="btn ghost small" onClick={() => setRenaming(true)}><IconEdit />{t("acc.rename")}</button>}
         {account.type === "microsoft" && (
-          <button className="btn ghost small" onClick={() => void api("auth:microsoft-refresh", { id: account.id }).then(() => { notify(t("acc.refreshed")); void reloadAll(); }).catch((e: Error) => notify(e.message, true))}>
+          <button className="btn ghost small" onClick={() => void api("auth:microsoft-refresh", { id: account.id }).then(() => { notify(t("acc.refreshed")); void reloadAll(); }).catch((e: Error) => notify(msErrorMessage(t, e.message), true))}>
             <IconRefresh />{t("acc.refresh")}
           </button>
         )}
