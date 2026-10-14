@@ -87,4 +87,13 @@ $Size = [math]::Round((Get-Item $Setup).Length / 1MB, 1)
 Write-Host ""
 Write-Host "SUCCESS: $Setup ($Size MB)"
 Write-Host "Unsigned installer (optional Authenticode signing, see README)."
-Get-FileHash $Setup -Algorithm SHA256 | Format-List
+# SHA-256 via .NET directly (no dependency on optional cmdlet modules).
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$stream = [System.IO.File]::OpenRead($Setup)
+try {
+  $hash = (($sha.ComputeHash($stream)) | ForEach-Object { $_.ToString("x2") }) -join ""
+} finally {
+  $stream.Close()
+  $sha.Dispose()
+}
+Write-Host "SHA256: $hash"

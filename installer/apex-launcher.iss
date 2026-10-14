@@ -41,12 +41,9 @@ WizardImageFile=..\assets\wizard.bmp
 WizardSmallImageFile=..\assets\wizard-small.bmp
 UninstallDisplayIcon={app}\Apex Launcher.exe
 WizardStyle=modern
-; Fenêtre d'arrière-plan sombre aux couleurs de l'app.
-WindowVisible=yes
-WindowShowCaption=no
-BackColor=$0E0E12
-BackColor2=$17171C
-BackColorDirection=lefttoright
+; NOTE: background-window tint directives (WindowVisible, BackColor...) are
+; obsolete and ignored since Inno Setup 6.7. Dark styling is applied to the
+; wizard pages via [Code] (StyleWizard).
 DisableWelcomePage=no
 
 [Languages]
