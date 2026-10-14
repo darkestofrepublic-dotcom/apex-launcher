@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.0.9 — 2026-10-14
+
+- Installateur personnalisé : choix de la langue (FR/EN) au démarrage, types d'installation complète/minimale/personnalisée, composants (fichiers requis, raccourcis), assistant sombre aux couleurs de l'app, messages de bienvenue brandés.
+
+
 ## 1.0.8 — 2026-10-14
 
 - Branding complet de l'installateur : visuels APEX du wizard (grande image 164×314 + petite 55×55 générées localement), icône du setup et métadonnées appliquées à l'exécutable.

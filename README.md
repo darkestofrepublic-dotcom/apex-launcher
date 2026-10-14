@@ -91,8 +91,8 @@ Le script `scripts/build-installer.ps1` effectue : compilation → `electron-bui
 de liens symboliques indisponibles sans admin ; le résultat est identique) →
 compilation Inno Setup → **`release\ApexLauncher-Setup-x64.exe`**.
 
-L'installateur (français) : installe les fichiers compilés, propose les raccourcis menu Démarrer/bureau,
-permet de lancer l'application, et **conserve par défaut** `%APPDATA%\ApexLauncher`
+L'installateur (français + anglais, choix au démarrage) : installe les fichiers compilés, propose les raccourcis menu Démarrer/bureau
+(installation complète, minimale ou personnalisée), permet de lancer l'application, et **conserve par défaut** `%APPDATA%\ApexLauncher`
 (mondes, instances, sauvegardes, paramètres) lors de la désinstallation et des mises à niveau.
 
 > **Signature** : l'installateur est construit **non signé** (statut affiché à la fin du script).
