@@ -97,11 +97,29 @@ export function sanitizeFileName(name: string): string {
   return path.basename(name).replace(/[<>:"|?*\x00-\x1f]/g, "_").slice(0, 180);
 }
 
-/** Vérifie qu'un chemin d'archive reste dans le répertoire prévu (anti zip-slip). */
+/** Vérifie qu'un chemin d'archive reste dans le répertoire prévu (anti zip-slip).
+ * Indépendant de la plateforme : les séparateurs Windows sont normalisés et les
+ * chemins absolus Windows/posix sont refusés partout (path.isAbsolute seul ne
+ * suffit pas : sur Linux, "C:\..." n'est pas vu comme absolu). */
 export function isSafeArchivePath(destDir: string, entryName: string): boolean {
-  const resolved = path.resolve(destDir, entryName);
-  const base = path.resolve(destDir) + path.sep;
-  return resolved.startsWith(base) && !path.isAbsolute(entryName);
+  if (!entryName || entryName.length > 500) return false;
+  const normalized = entryName.replace(/\\/g, "/");
+  if (normalized.startsWith("/")) return false;
+  if (/^[A-Za-z]:(\/|$)/.test(normalized)) return false;
+  const parts = normalized.split("/");
+  let depth = 0;
+  for (const part of parts) {
+    if (part === "" || part === ".") continue;
+    if (part === "..") {
+      depth -= 1;
+      if (depth < 0) return false;
+    } else {
+      depth += 1;
+    }
+  }
+  const base = path.resolve(destDir);
+  const resolved = path.resolve(base, ...parts.filter((p) => p !== "" && p !== "."));
+  return resolved === base || resolved.startsWith(base + path.sep);
 }
 
 // --- CurseForge (accès officiel, clé requise) ---

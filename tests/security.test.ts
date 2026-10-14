@@ -30,13 +30,21 @@ describe("sécurité des chemins d'archives (anti zip-slip)", () => {
   const base = "C:\\data\\instance";
   it("accepte un chemin normal", () => {
     expect(isSafeArchivePath(base, "mods/monmod.jar")).toBe(true);
+    expect(isSafeArchivePath("/home/user/instance", "mods/monmod.jar")).toBe(true);
   });
-  it("refuse la remontée ../", () => {
+  it("refuse la remontée ../ (slash et antislash)", () => {
     expect(isSafeArchivePath(base, "../evil.exe")).toBe(false);
     expect(isSafeArchivePath(base, "mods/../../evil.exe")).toBe(false);
+    expect(isSafeArchivePath(base, "mods\\..\\..\\evil.exe")).toBe(false);
   });
-  it("refuse les chemins absolus", () => {
+  it("refuse les chemins absolus Windows et posix, sur toutes les plateformes", () => {
     expect(isSafeArchivePath(base, "C:\\Windows\\evil.exe")).toBe(false);
+    expect(isSafeArchivePath(base, "C:/Windows/evil.exe")).toBe(false);
+    expect(isSafeArchivePath("/home/user/instance", "/etc/passwd")).toBe(false);
+    expect(isSafeArchivePath("/home/user/instance", "C:\\Windows\\evil.exe")).toBe(false);
+  });
+  it("accepte les remontées qui restent dans le dossier", () => {
+    expect(isSafeArchivePath(base, "mods/../mods/a.jar")).toBe(true);
   });
 });
 
