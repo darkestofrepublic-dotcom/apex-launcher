@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.0.11 — 2026-10-15
+
+- Mise à jour auto robuste : repli via la page GitHub quand l'API est injoignable (réseaux filtrés, rate-limit) — tag et URL déduits de la redirection, téléchargement direct sans API.
+
+
 ## 1.0.10 — 2026-10-14
 
 - Parcours d'inscription : section « Pas encore de compte ? » avec liens officiels (acheter Minecraft, créer un compte Microsoft). Aucun identifiant collecté : tout passe par les sites officiels.

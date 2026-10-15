@@ -25,3 +25,28 @@ describe("source unique de version", () => {
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
+
+describe("repli de mise à jour sans API (pur, sans réseau)", () => {
+  it("déduit tag et URL depuis la redirection de la page releases/latest", async () => {
+    const { parseGithubFallback } = await import("../electron/services/updates");
+    expect(
+      parseGithubFallback(
+        "https://api.github.com/darkestofrepublic-dotcom/apex-launcher/releases/latest",
+        "https://github.com/darkestofrepublic-dotcom/apex-launcher/releases/tag/v1.0.10",
+      ),
+    ).toEqual({
+      latest: "1.0.10",
+      downloadUrl: "https://github.com/darkestofrepublic-dotcom/apex-launcher/releases/download/v1.0.10/ApexLauncher-Setup-x64.exe",
+    });
+  });
+  it("refuse les flux non GitHub et les redirections sans tag", async () => {
+    const { parseGithubFallback } = await import("../electron/services/updates");
+    expect(parseGithubFallback("https://example.com/feed.json", "https://example.com/v1")).toBeNull();
+    expect(
+      parseGithubFallback(
+        "https://api.github.com/o/r/releases/latest",
+        "https://github.com/o/r/releases",
+      ),
+    ).toBeNull();
+  });
+});

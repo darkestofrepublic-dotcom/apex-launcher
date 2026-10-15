@@ -37,6 +37,22 @@ interface GithubRelease {
   assets?: { name: string; browser_download_url: string }[];
 }
 
+/** Construit les URLs de repli (page HTML, pas l'API) pour un flux GitHub officiel.
+ * Fonction pure (testée) : ne fait aucun réseau. */
+export function parseGithubFallback(feedUrl: string, finalUrl: string): { latest: string; downloadUrl: string } | null {
+  const feed = feedUrl.match(/^https:\/\/api\.github\.com\/([^/]+)\/([^/]+)\/releases\/latest\/?$/i);
+  if (!feed) return null;
+  const [, owner, repo] = feed;
+  const tag = finalUrl.match(/\/releases\/tag\/([^/?#]+)/)?.[1];
+  if (!tag) return null;
+  const latest = tag.replace(/^v/i, "");
+  if (!latest) return null;
+  return {
+    latest,
+    downloadUrl: `https://github.com/${owner}/${repo}/releases/download/${tag}/${APP_CONFIG.installerFileName}`,
+  };
+}
+
 /** Vérifie les mises à jour depuis le flux configuré (releases GitHub par défaut). */
 export async function checkForUpdates(feedUrl?: string): Promise<OperationResult<UpdateInfo>> {
   const log = getLogger();
@@ -51,26 +67,65 @@ export async function checkForUpdates(feedUrl?: string): Promise<OperationResult
     } finally {
       clearTimeout(timer);
     }
-    if (res.status === 404) {
-      return { ok: false, error: "update-feed-not-found" };
+    if (res.ok) {
+      const release = (await res.json()) as GithubRelease;
+      const latest = (release.tag_name ?? "").replace(/^v/i, "");
+      if (!latest) return { ok: false, error: "update-feed-invalid" };
+      info.latestVersion = latest;
+      info.notes = (release.body ?? "").slice(0, 2000);
+      const setup = release.assets?.find((a) => a.name === APP_CONFIG.installerFileName) ?? release.assets?.find((a) => a.name.endsWith(".exe"));
+      info.downloadUrl = setup?.browser_download_url ?? release.html_url;
+      info.available = compareVersions(latest, APP_VERSION) > 0;
+      log.info("mises-a-jour", info.available ? `Mise à jour disponible : ${latest}` : `À jour (${APP_VERSION}).`);
+      return { ok: true, data: info };
     }
-    if (!res.ok) {
-      return { ok: false, error: "update-feed-unreachable" };
+    // L'API a refusé (404, réseau filtré, rate-limit...) : repli via la page HTML
+    // (github.com, souvent accessible quand l'API ne l'est pas).
+    const fallback = await checkGithubHtmlFallback(url);
+    if (fallback) {
+      info.latestVersion = fallback.latest;
+      info.downloadUrl = fallback.downloadUrl;
+      info.available = compareVersions(fallback.latest, APP_VERSION) > 0;
+      log.info("mises-a-jour", `Vérification via page HTML : ${fallback.latest} (disponible : ${info.available}).`);
+      return { ok: true, data: info };
     }
-    const release = (await res.json()) as GithubRelease;
-    const latest = (release.tag_name ?? "").replace(/^v/i, "");
-    if (!latest) return { ok: false, error: "update-feed-invalid" };
-    info.latestVersion = latest;
-    info.notes = (release.body ?? "").slice(0, 2000);
-    const setup = release.assets?.find((a) => a.name === APP_CONFIG.installerFileName) ?? release.assets?.find((a) => a.name.endsWith(".exe"));
-    info.downloadUrl = setup?.browser_download_url ?? release.html_url;
-    info.available = compareVersions(latest, APP_VERSION) > 0;
-    log.info("mises-a-jour", info.available ? `Mise à jour disponible : ${latest}` : `À jour (${APP_VERSION}).`);
-    return { ok: true, data: info };
+    return { ok: false, error: res.status === 404 ? "update-feed-not-found" : "update-feed-unreachable" };
   } catch (err) {
+    const fallback = await checkGithubHtmlFallback(url);
+    if (fallback) {
+      info.latestVersion = fallback.latest;
+      info.downloadUrl = fallback.downloadUrl;
+      info.available = compareVersions(fallback.latest, APP_VERSION) > 0;
+      log.info("mises-a-jour", `Vérification via page HTML : ${fallback.latest} (disponible : ${info.available}).`);
+      return { ok: true, data: info };
+    }
     const message = err instanceof Error && err.name === "AbortError" ? "update-timeout" : "update-feed-unreachable";
     log.warn("mises-a-jour", `Vérification impossible : ${message}`);
     return { ok: false, error: message };
+  }
+}
+
+/** Repli sans API : suit la redirection de /releases/latest et en déduit tag + URL. */
+async function checkGithubHtmlFallback(feedUrl: string): Promise<{ latest: string; downloadUrl: string } | null> {
+  const page = feedUrl.replace(
+    /^https:\/\/api\.github\.com\/([^/]+)\/([^/]+)\/releases\/latest\/?$/i,
+    "https://github.com/$1/$2/releases/latest",
+  );
+  if (page === feedUrl) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    let res: Response;
+    try {
+      res = await fetch(page, { headers: { "User-Agent": "ApexLauncher" }, signal: controller.signal, redirect: "follow" });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) return null;
+    await res.arrayBuffer().catch(() => null);
+    return parseGithubFallback(feedUrl, res.url);
+  } catch {
+    return null;
   }
 }
 
